@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import os
 import hashlib
 import urlparse
@@ -16,7 +35,6 @@ JWT_FILE_SUFFIX = ".jwt"
 
 RUN_JOB = ("POST", "hopsworks-api/api/project/{project_id}/jobs/{job_name}/executions?action=start")
 
-
 class HopsworksHook(BaseHook, LoggingMixin):
     def __init__(self, hopsworks_conn_id='hopsworks_default', project_id=None, owner=None):
         self.hopsworks_conn_id = hopsworks_conn_id
@@ -29,25 +47,31 @@ class HopsworksHook(BaseHook, LoggingMixin):
     def start_job(self, job_name):
         self.log.info("Starting job %s", job_name)
         method, endpoint = RUN_JOB
-        jwt = self._parse_jwt_for_user()
         endpoint = endpoint.format(project_id=self.project_id, job_name=job_name)
+        response = self._do_api_call(method, endpoint)
+
+    def _do_api_call(self, method, endpoint):
+        jwt = self._parse_jwt_for_user()
         url = "http://{host}:{port}/{endpoint}".format(
             host = self._parse_host(self.hopsworks_conn.host),
-            endpoint = endpoint,
-            port = self.hopsworks_conn.port)
-        authentication = AuthorizationToken(jwt)
-        try:
-            response = requests.post(url, auth=authentication)
-            return response.json()['state']
-        except requests_exceptions.RequestException as ex:
-            #msg = "Response: {0}, Status code: {1}".format(ex.response.content, ex.response.status_code)
-            #self.log.error(msg)
-            self.log.error(ex)
-            raise AirflowException(ex)
+            port = self.hopsworks_conn.port,
+            endpoint = endpoint)
+        auth = AuthorizationToken(jwt)
+        if "GET" == method:
+            requests_method = requests.get
+        elif "POST" == method:
+            requests_method = requests.post
+        else:
+            raise AirflowException("Unexpected HTTP method: " + method)
 
-    def _do_api_call(self):
-        pass
-        
+        try:
+            response = requests_method(url, auth=auth)
+            response.raise_for_status()
+            return response.json()
+        except requests_exceptions.RequestException as ex:
+            raise AirflowException("Error making HTTP request. Response: {0} - Status Code: {1}"
+                                   .format(ex.response.content, ex.response.status_code))
+            
     def _parse_host(self, host):
         """
         Host should be in the form of hostname:port
@@ -79,7 +103,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
         airflow_home = self._get_airflow_home()
         secret_dir = self._generate_secret_dir()
         filename = self.owner + JWT_FILE_SUFFIX
-        jwt_token_file = os.path.join(airflow_home, secret_dir, filename)
+        jwt_token_file = os.path.join(airflow_home, ,"dags", secret_dir, filename)
 
         if not os.path.isfile(jwt_token_file):
             raise AirflowException('Could not read JWT file for user {}'.format(self.owner))
