@@ -22,7 +22,16 @@ from airflow.utils.decorators import apply_defaults
 
 from hopsworks_plugin.hooks.hopsworks_hook import HopsworksHook
 
-class HopsworksRunOperator(BaseOperator):
+class HopsworksLaunchOperator(BaseOperator):
+    """
+    Basic operator to launch jobs on Hadoop through Hopsworks
+    Jobs should have already been created in Hopsworks
+
+    :param job_name: Name of the job in Hopsworks
+    :type job_name: str
+    :param project_id: Hopsworks Project ID this job is associated with
+    :type project_id: int
+    """
 
     @apply_defaults
     def __init__(
@@ -31,16 +40,15 @@ class HopsworksRunOperator(BaseOperator):
             job_name = None,
             project_id = None,
             **kwargs):
-        super(HopsworksRunOperator, self).__init__(**kwargs)
+        super(HopsworksLaunchOperator, self).__init__(**kwargs)
         self.hopsworks_conn_id = hopsworks_conn_id
         self.job_name = job_name
         self.project_id = project_id
 
     def _get_hook(self):
-        self.log.info("> Getting Hopsworks hook")
         return HopsworksHook(self.hopsworks_conn_id, self.project_id, self.owner)
 
     def execute(self, context):
         hook = self._get_hook()
-        self.log.info("> Starting job %s", self.job_name)
-        hook.start_job(self.job_name)
+        self.log.debug("Launching job %s", self.job_name)
+        hook.launch_job(self.job_name)

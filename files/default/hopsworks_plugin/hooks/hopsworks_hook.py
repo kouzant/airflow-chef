@@ -34,25 +34,55 @@ AIRFLOW_HOME_ENV = "AIRFLOW_HOME"
 JWT_FILE_SUFFIX = ".jwt"
 
 RUN_JOB = ("POST", "hopsworks-api/api/project/{project_id}/jobs/{job_name}/executions?action=start")
+# Get the latest execution
+JOB_STATE = ("GET", "hopsworks-api/api/project/{project_id}/jobs/{job_name}/executions?sort_by=appId:desc&limit=1")
 
 class HopsworksHook(BaseHook, LoggingMixin):
+    """
+    Hook to interact with Hopsworks
+
+    :param hopsworks_conn_id: The name of Hopsworks connection to use.
+    :type hopsworks_conn_id: str
+    :param project_id: The project ID the job is associated with.
+    :type project_id: int
+    :param owner: Hopsworks project specific username
+    :type owner: str
+    """
     def __init__(self, hopsworks_conn_id='hopsworks_default', project_id=None, owner=None):
         self.hopsworks_conn_id = hopsworks_conn_id
         self.project_id = project_id
         self.owner = owner
         self.hopsworks_conn = self.get_connection(hopsworks_conn_id)
-        self.log.info("> Constructing HopsworksHook with id: %s",  hopsworks_conn_id)
         self._get_airflow_home()
 
-    def start_job(self, job_name):
-        self.log.info("Starting job %s", job_name)
+    def launch_job(self, job_name):
+        """
+        Function for launching a job to Hopsworks. The call does not wait for job
+        completion, use HopsworksSensor for this purpose.
+        
+        :param job_name: Name of the job to be launched in Hopsworks
+        :type job_name: str
+        """
         method, endpoint = RUN_JOB
         endpoint = endpoint.format(project_id=self.project_id, job_name=job_name)
         response = self._do_api_call(method, endpoint)
 
+    def get_job_state(self, job_name):
+        """
+        Function to get the state of a job
+
+        :param job_name: Name of the job in Hopsworks
+        :type job_name: str
+        """
+        method, endpoint = JOB_STATE
+        endpoint = endpoint.format(project_id=self.project_id, job_name=job_name)
+        response = self._do_api_call(method, endpoint)
+        item = response['items'][0]
+        return item['state']
+        
     def _do_api_call(self, method, endpoint):
         jwt = self._parse_jwt_for_user()
-        url = "http://{host}:{port}/{endpoint}".format(
+        url = "https://{host}:{port}/{endpoint}".format(
             host = self._parse_host(self.hopsworks_conn.host),
             port = self.hopsworks_conn.port,
             endpoint = endpoint)
@@ -65,7 +95,9 @@ class HopsworksHook(BaseHook, LoggingMixin):
             raise AirflowException("Unexpected HTTP method: " + method)
 
         try:
-            response = requests_method(url, auth=auth)
+            # Until we find a better approach to load trust anchors and
+            # bypass hostname verification, disable verify
+            response = requests_method(url, auth=auth, verify=False)
             response.raise_for_status()
             return response.json()
         except requests_exceptions.RequestException as ex:
@@ -76,6 +108,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
         """
         Host should be in the form of hostname:port
         Remove protocol or any endpoints from the host
+
         """
         parsed_host = urlparse.urlparse(host).hostname
         if parsed_host:
@@ -84,6 +117,9 @@ class HopsworksHook(BaseHook, LoggingMixin):
         return host
 
     def _get_airflow_home(self):
+        """
+        Discover Airflow home. Environment variable takes precedence over configuration
+        """
         if AIRFLOW_HOME_ENV in os.environ:
             return os.environ[AIRFLOW_HOME_ENV]
         airflow_home = configuration.conf.get("core", "airflow_home")
@@ -92,18 +128,27 @@ class HopsworksHook(BaseHook, LoggingMixin):
         return airflow_home
 
     def _generate_secret_dir(self):
+        """
+        Generate the secret project directory where the JWT file should be located
+        """
         if not self.project_id:
             raise AirflowException("Hopsworks Project ID is not set")
         return hashlib.sha256(str(self.project_id)).hexdigest()
 
     def _parse_jwt_for_user(self):
+        """
+        Read JWT for the user from the secret project directory.
+
+        WARNING: JWT is renewed automatically by Hopsworks, so caching
+        will break things!!!
+        """
         if not self.owner:
             raise AirflowException("Owner of the DAG is not specified")
         
         airflow_home = self._get_airflow_home()
         secret_dir = self._generate_secret_dir()
         filename = self.owner + JWT_FILE_SUFFIX
-        jwt_token_file = os.path.join(airflow_home, ,"dags", secret_dir, filename)
+        jwt_token_file = os.path.join(airflow_home, "dags", secret_dir, filename)
 
         if not os.path.isfile(jwt_token_file):
             raise AirflowException('Could not read JWT file for user {}'.format(self.owner))
