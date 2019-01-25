@@ -18,8 +18,8 @@
 # under the License.
 
 import os
+import sys
 import hashlib
-import urlparse
 import requests
 
 from requests import exceptions as requests_exceptions
@@ -29,7 +29,15 @@ from airflow.hooks.base_hook import BaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.exceptions import AirflowException
 from airflow import configuration
+from airflow.models import Connection
 
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    from urllib import parse as urlparse
+else:
+    import urlparse
+    
 AIRFLOW_HOME_ENV = "AIRFLOW_HOME"
 JWT_FILE_SUFFIX = ".jwt"
 
@@ -55,6 +63,13 @@ class HopsworksHook(BaseHook, LoggingMixin):
         self.hopsworks_conn = self.get_connection(hopsworks_conn_id)
         self._get_airflow_home()
 
+    def get_connection(self, connection_id):
+        hopsworks_host = configuration.conf.get("webserver", "hopsworks_host")
+        hopsworks_port = configuration.conf.getint("webserver", "hopsworks_port")
+        return Connection(conn_id=connection_id,
+                          host=self._parse_host(hopsworks_host),
+                          port=hopsworks_port)
+    
     def launch_job(self, job_name):
         """
         Function for launching a job to Hopsworks. The call does not wait for job
@@ -83,7 +98,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
     def _do_api_call(self, method, endpoint):
         jwt = self._parse_jwt_for_user()
         url = "https://{host}:{port}/{endpoint}".format(
-            host = self._parse_host(self.hopsworks_conn.host),
+            host = self.hopsworks_conn.host,
             port = self.hopsworks_conn.port,
             endpoint = endpoint)
         auth = AuthorizationToken(jwt)
@@ -100,13 +115,15 @@ class HopsworksHook(BaseHook, LoggingMixin):
             response = requests_method(url, auth=auth, verify=False)
             response.raise_for_status()
             return response.json()
+        except requests_exceptions.SSLError as ex:
+            raise AirflowException(ex)
         except requests_exceptions.RequestException as ex:
             raise AirflowException("Error making HTTP request. Response: {0} - Status Code: {1}"
                                    .format(ex.response.content, ex.response.status_code))
             
     def _parse_host(self, host):
         """
-        Host should be in the form of hostname:port
+        Host should be just the hostname or ip address
         Remove protocol or any endpoints from the host
 
         """
