@@ -61,18 +61,6 @@ directory node['airflow']['base_dir'] + "/dags"  do
   action :create
 end
 
-
-template node['airflow']['base_dir'] + "/plugins/hopsworks_job_operator.py" do
-  source "hopsworks_job_operator.py.erb"
-  owner node['airflow']['user']
-  group node['airflow']['group']
-  mode "0644"
-  variables({
-    :config => node["airflow"]["config"]
-  })
-end
-
-
 template "airflow_services_env" do
   source "init_system/airflow-env.erb"
   path node["airflow"]["env_path"]
