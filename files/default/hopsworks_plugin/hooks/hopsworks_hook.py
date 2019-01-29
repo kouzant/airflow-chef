@@ -150,7 +150,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
         """
         if not self.project_id:
             raise AirflowException("Hopsworks Project ID is not set")
-        return hashlib.sha256(str(self.project_id)).hexdigest()
+        return hashlib.sha256(str(self.project_id).encode('UTF-8')).hexdigest()
 
     def _parse_jwt_for_user(self):
         """
@@ -165,7 +165,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
         airflow_home = self._get_airflow_home()
         secret_dir = self._generate_secret_dir()
         filename = self.owner + JWT_FILE_SUFFIX
-        jwt_token_file = os.path.join(airflow_home, "dags", secret_dir, filename)
+        jwt_token_file = os.path.join(airflow_home, "secrets", secret_dir, filename)
 
         if not os.path.isfile(jwt_token_file):
             raise AirflowException('Could not read JWT file for user {}'.format(self.owner))
