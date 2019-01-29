@@ -62,8 +62,8 @@ default['airflow']["scheduler_runs"] = 5
 
 
 # Python config
-default['airflow']["python_runtime"] = "2"
-default['airflow']["python_version"] = "2.7"
+default['airflow']["python_runtime"] = "3"
+default['airflow']["python_version"] = "3.6"
 default['airflow']["pip_version"] = true
 
 # Configurations stated below are required for this cookbook and will be written to airflow.cfg, you can add more config by using structure like:

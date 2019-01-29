@@ -53,7 +53,7 @@ class HopsworksHook(BaseHook, LoggingMixin):
     :type hopsworks_conn_id: str
     :param project_id: The project ID the job is associated with.
     :type project_id: int
-    :param owner: Hopsworks project specific username
+    :param owner: Hopsworks username
     :type owner: str
     """
     def __init__(self, hopsworks_conn_id='hopsworks_default', project_id=None, owner=None):
