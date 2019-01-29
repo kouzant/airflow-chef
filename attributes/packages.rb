@@ -53,7 +53,8 @@ default['airflow']['packages'] =
     ldap: [{ name: 'ldap3', version: '>=0.9.9.1' }],
     kerberos: [{ name: 'pykerberos', version: '>=1.1.8' },
                { name: 'thrift_sasl', version: '>=0.2.0' },
-               { name: 'snakebite[kerberos]', version: '>=2.7.8' }],
+               #{ name: 'snakebite[kerberos]', version: '>=2.7.8' }
+              ],
     password: [{ name: 'bcrypt', version: '>=2.0.0' },
                { name: 'flask-bcrypt', version: '>=0.7.1' }],
     github_enterprise: [{ name: 'Flask-OAuthlib', version: '>=0.9.1' }],
