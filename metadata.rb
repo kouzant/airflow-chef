@@ -49,6 +49,14 @@ attribute "airflow/group",
           :description => "Airflow group to run service as",
           :type => 'string'
 
+attribute "airflow/mysql_user",
+          :description => "Airflow database username",
+          :type => 'string'
+
+attribute "airflow/mysql_password",
+          :description => "Airflow database password",
+          :type => 'string'
+
 attribute "airflow/operators",
           :description => "Comma-separated list of airflow operators to install by default. E.g., 'hdfs, hive, mysql, password'",
           :type => 'string'

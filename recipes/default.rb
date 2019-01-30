@@ -13,12 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include_recipe "hops_airflow::db"
 include_recipe "hops_airflow::packages"
-
-
-# CREATE DATABASE airflow CHARACTER SET utf8 COLLATE utf8_unicode_ci;
-# grant all on airflow.* TO ‘USERNAME'@'%' IDENTIFIED BY ‘{password}';
-exec = "#{node['ndb']['scripts_dir']}/mysql-client.sh"
 
 hopsworksUser = "glassfish"
 if node.attribute? "hopsworks"
@@ -31,17 +27,6 @@ group node['airflow']['group'] do
   action :modify
   members [hopsworksUser]  
   append true
-end
-
-
-bash 'create_airflow_db' do
-  user "root"
-  code <<-EOF
-      set -e
-      #{exec} -e \"CREATE DATABASE IF NOT EXISTS airflow CHARACTER SET latin1\"
-      #{exec} -e \"GRANT ALL PRIVILEGES ON airflow.* TO '#{node[:mysql][:user]}'@'localhost' IDENTIFIED BY '#{node[:mysql][:password]}'\"
-    EOF
-  not_if "#{exec} -e 'show databases' | grep airflow"
 end
 
 include_recipe "hops_airflow::config"
