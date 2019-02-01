@@ -61,10 +61,6 @@ attribute "airflow/operators",
           :description => "Comma-separated list of airflow operators to install by default. E.g., 'hdfs, hive, mysql, password'",
           :type => 'string'
 
-attribute "airflow/examples",
-          :description => "Install Airflow examples (default: 'true'). Set to 'false' to skip.",
-          :type => 'string'
-
 attribute "airflow/scheduler_runs",
           :description => "Number of runs to execute before the scheduler is restarted",
           :type => 'string'

@@ -23,8 +23,6 @@ default['airflow']["version"]         = "1.10.1"
 default['airflow']['user']            = node['install']['user'].empty? ? 'airflow' : node['install']['user']
 default['airflow']['group']           = node['install']['user'].empty? ? 'airflow' : node['install']['user']
 
-default['airflow']["examples"]        = "true"
-
 default['airflow']['mysql_user']      = "airflow_db"
 default['airflow']['mysql_password']  = "airflow_db"
 
@@ -139,6 +137,7 @@ default['airflow']["config"]["github_enterprise"]["api_rev"] = 'v3'
 # SequentialExecutor, LocalExecutor, CeleryExecutor
 default['airflow']["config"]["core"]["executor"]  = "LocalExecutor"
 
+default['airflow']['config']['core']['load_examples'] = false
 
 # The base url of your website as airflow cannot guess what domain or
 # cname you are using. This is used in automated emails that

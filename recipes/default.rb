@@ -94,7 +94,7 @@ template node['airflow']['base_dir'] + "/create-default-user.sh" do
 end
 
 examples_dir = "#{node['conda']['base_dir']}/envs/airflow/lib/python3.7/site-packages/airflow/example_dags"
-if node['airflow']['examples'].upcase != "TRUE"
+if not node['airflow']['config']['core']['load_examples']
   bash 'remove_examples' do
     user "root"
     code <<-EOF
