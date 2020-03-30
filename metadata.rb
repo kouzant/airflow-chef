@@ -22,13 +22,10 @@ supports         'ubuntu', '>= 14.04'
 supports         'centos', '>= 7.0'
 chef_version     '>=12.1'
 
-depends 'apt'
-depends 'poise-python'
-depends 'kagent'
-depends 'ndb'
-depends 'java'
-depends 'hops'
-depends 'hive2'
+depends 'apt', '~> 7.0'
+depends 'poise-python', '~> 1.7'
+depends 'java', '~> 7.0.0'
+
 
 recipe           "default", "Configures an Airflow Server"
 recipe           "install", "Installs an Airflow Server"
