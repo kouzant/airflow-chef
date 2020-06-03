@@ -101,11 +101,11 @@ default['airflow']["config"]["core"]["fernet_key"] = "G3jB5--jCQpRYp7hwUtpfQ_S8z
 default['airflow']["config"]["celery"]["worker_concurrency"] = 16
 default['airflow']["config"]["celery"]["broker_url"] = "rdis://#{node['host']}:6379/0"
 
-default['airflow']["config"]["celery"]["celery_result_backend"] = node['install']['localhost'].casecmp?("true") ? "db+mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@127.0.0.1:3306/airflow" : "db+mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@#{node['fqdn']}:3306/airflow"
+default['airflow']["config"]["celery"]["celery_result_backend"] = "db+mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@127.0.0.1:3306/airflow"
 
 # MySQL
 # The SqlAlchemy connection string to the metadata database.
-default['airflow']["config"]["core"]["sql_alchemy_conn"] = node['install']['localhost'].casecmp?("true") ? "mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@127.0.0.1:3306/airflow" : "mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@#{node['fqdn']}:3306/airflow"
+default['airflow']["config"]["core"]["sql_alchemy_conn"] = "mysql://#{node['airflow']['mysql_user']}:#{node['airflow']['mysql_password']}@127.0.0.1:3306/airflow"
 # The SqlAlchemy pool size is the maximum number of database connection in the pool.
 default['airflow']["config"]["core"]["sql_alchemy_pool_size"] = 5
 # The SqlAlchemy pool recycle is the number of seconds a connection

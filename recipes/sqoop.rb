@@ -90,7 +90,8 @@ bash 'create_sqoop_db' do
   code <<-EOF
       set -e
       #{exec} -e \"CREATE DATABASE IF NOT EXISTS sqoop CHARACTER SET latin1\"
-      #{exec} -e \"GRANT ALL PRIVILEGES ON sqoop.* TO '#{node['airflow']['mysql_user']}'@'localhost' IDENTIFIED BY '#{node['airflow']['airflow_password']}'\"
+      #{exec} -e \"GRANT ALL PRIVILEGES ON sqoop.* TO '#{node['airflow']['mysql_user']}'@'localhost' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
+      #{exec} -e \"GRANT ALL PRIVILEGES ON sqoop.* TO '#{node['airflow']['mysql_user']}'@'127.0.0.1' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
     EOF
   not_if "#{exec} -e 'show databases' | grep sqoop"
 end

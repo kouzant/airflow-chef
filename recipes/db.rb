@@ -1,11 +1,3 @@
-private_ip = my_private_ip()
-fqdn = node['fqdn']
-
-if node['install']['localhost'].casecmp?("true") 
-  fqdn = "localhost"
-end
-
-
 exec = "#{node['ndb']['scripts_dir']}/mysql-client.sh"
 
 bash 'create_airflow_db' do	
@@ -13,8 +5,6 @@ bash 'create_airflow_db' do
   code <<-EOH
       set -e	
       #{exec} -e \"CREATE DATABASE IF NOT EXISTS airflow CHARACTER SET latin1\"	
-      #{exec} -e \"GRANT ALL PRIVILEGES ON airflow.* TO '#{node['airflow']['mysql_user']}'@'#{private_ip}' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
-      #{exec} -e \"GRANT ALL PRIVILEGES ON airflow.* TO '#{node['airflow']['mysql_user']}'@'#{fqdn}' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
       #{exec} -e \"GRANT ALL PRIVILEGES ON airflow.* TO '#{node['airflow']['mysql_user']}'@'127.0.0.1' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
       #{exec} -e \"GRANT ALL PRIVILEGES ON airflow.* TO '#{node['airflow']['mysql_user']}'@'localhost' IDENTIFIED BY '#{node['airflow']['mysql_password']}'\"
     EOH
