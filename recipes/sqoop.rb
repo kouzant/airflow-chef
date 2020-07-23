@@ -20,6 +20,14 @@ user node['sqoop']['user'] do
   not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
+group node["kagent"]["certs_group"] do
+  action :manage
+  append true
+  excluded_members node['sqoop']['user']
+  not_if { node['install']['external_users'].casecmp("true") == 0 }
+  only_if { conda_helpers.is_upgrade }
+end
+
 group node['kagent']['userscerts_group'] do
   action :modify
   members node['sqoop']['user']
