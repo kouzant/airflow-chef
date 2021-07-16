@@ -53,6 +53,17 @@ bash 'Move airflow dags to data volume' do
   code <<-EOH
     set -e
     mv -f #{node["airflow"]["config"]["core"]["dags_folder"]}/* #{node['airflow']['data_volume']['dags_dir']}
+  EOH
+  only_if { conda_helpers.is_upgrade }
+  only_if { File.directory?(node["airflow"]["config"]["core"]["dags_folder"])}
+  not_if { File.symlink?(node["airflow"]["config"]["core"]["dags_folder"])}
+  not_if { Dir.empty?(node["airflow"]["config"]["core"]["dags_folder"])}
+end
+
+bash 'Delete old airflow dags directory' do
+  user 'root'
+  code <<-EOH
+    set -e
     rm -rf #{node["airflow"]["config"]["core"]["dags_folder"]}
   EOH
   only_if { conda_helpers.is_upgrade }
@@ -121,6 +132,17 @@ bash 'Move airflow secrets to data volume' do
   code <<-EOH
     set -e
     mv -f #{node['airflow']['secrets_dir']}/* #{node['airflow']['data_volume']['secrets_dir']}
+  EOH
+  only_if { conda_helpers.is_upgrade }
+  only_if { File.directory?(node['airflow']['secrets_dir'])}
+  not_if { File.symlink?(node['airflow']['secrets_dir'])}
+  not_if { Dir.empty?(node['airflow']['secrets_dir']) }
+end
+
+bash 'Delete airflow secrets' do
+  user 'root'
+  code <<-EOH
+    set -e
     rm -rf #{node['airflow']['secrets_dir']}
   EOH
   only_if { conda_helpers.is_upgrade }
